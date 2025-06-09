@@ -1,24 +1,35 @@
 {
-  "name": "video-song-helper",
-  "version": "0.1.0",
-  "private": true,
+  "name": "song-recommendation-app",
+  "version": "1.0.0",
+  "description": "A Next.js application for providing song recommendations based on user ideas for Instagram reels.",
+  "main": "src/app/page.tsx",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.3.3"
+    "@tailwindcss/postcss": "^4.1.8",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "tailwindcss": "latest"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4"
-  }
+    "@types/node": "22.15.30",
+    "@types/react": "19.1.6",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "typescript": "latest"
+  },
+  "keywords": [
+    "nextjs",
+    "song",
+    "recommendation",
+    "instagram",
+    "reels"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
 }
