@@ -2,11 +2,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from TikTokApi import TikTokApi
 import asyncio
 import os
 import logging
+from typing import Optional
 
 load_dotenv()
 
@@ -46,8 +47,8 @@ class IdeaData(BaseModel):
 class TokenStatus(BaseModel):
     has_manual_token: bool
     auto_generation_enabled: bool
-    last_refresh: str = None
-    next_refresh: str = None
+    last_refresh: Optional[str] = None
+    next_refresh: Optional[str] = None
 
 # Enhanced TikTok function with automatic token management
 async def trending_videos_with_auto_token():
@@ -56,20 +57,18 @@ async def trending_videos_with_auto_token():
     Falls back to auto-generation if manual token fails
     """
     global last_token_refresh
+
     
+
     try:
         # First try with manual token if available
         if ms_token:
-            logger.info("Attempting with manual ms_token")
+            logger.info("Attempting with manual ms_token ")
             async with TikTokApi() as api:
-                await api.create_sessions(
-                    ms_tokens=[ms_token], 
-                    num_sessions=1, 
-                    sleep_after=3, 
-                    browser=os.getenv("TIKTOK_BROWSER", "chromium")
-                )
+                await api.create_sessions(ms_tokens=[ms_token], num_sessions=1, sleep_after=3, browser=os.getenv("TIKTOK_BROWSER", "webkit"))
                 videos_data = []
                 async for video in api.trending.videos(count=30):
+                    logger.info(video)
                     videos_data.append(video.as_dict)
                 
                 last_token_refresh = datetime.now()
@@ -83,16 +82,13 @@ async def trending_videos_with_auto_token():
     try:
         logger.info("Attempting automatic token generation")
         async with TikTokApi() as api:
-            # Let the API generate tokens automatically
-            await api.create_sessions(
-                ms_tokens=None,  # This triggers auto-generation
-                num_sessions=1, 
-                sleep_after=3, 
-                browser=os.getenv("TIKTOK_BROWSER", "chromium")
-            )
+            await api.create_sessions(ms_tokens=[ms_token], num_sessions=1, sleep_after=3, browser=os.getenv("TIKTOK_BROWSER", "webkit"))
+            logger.info("Created session with auto-generated token")  
             videos_data = []
             async for video in api.trending.videos(count=30):
+                logger.info(video)
                 videos_data.append(video.as_dict)
+                            
             
             last_token_refresh = datetime.now()
             logger.info(f"Successfully fetched {len(videos_data)} videos with auto-generated token")
@@ -110,6 +106,7 @@ async def validate_and_refresh_token():
     global last_token_refresh
     
     now = datetime.now()
+    logger.info("Checking if token refresh is needed...")
     
     # Check if we need to refresh based on time
     if (last_token_refresh is None or 
@@ -120,12 +117,15 @@ async def validate_and_refresh_token():
             # Test with a small request
             async with TikTokApi() as api:
                 if ms_token:
-                    await api.create_sessions(ms_tokens=[ms_token], num_sessions=1)
+                    logger.info("Creating session with manual ms_token")
+                    await api.create_sessions(ms_tokens=[ms_token], num_sessions=1, sleep_after=3, browser=os.getenv("TIKTOK_BROWSER", "webkit"))
                 else:
-                    await api.create_sessions(ms_tokens=None, num_sessions=1)
+                    logger.info("Creating session with auto-generated token")
+                    await api.create_sessions(ms_tokens=[ms_token], num_sessions=1, sleep_after=3, browser=os.getenv("TIKTOK_BROWSER", "webkit"))
                 
                 # Try to fetch just 1 video to test
                 async for video in api.trending.videos(count=1):
+                    logger.info("Token test fetch successful")
                     break
                 
                 last_token_refresh = now
@@ -133,9 +133,10 @@ async def validate_and_refresh_token():
                 return True
                 
         except Exception as e:
-            logger.warning(f"Token validation failed: {e}")
+            logger.warning(f"Token validation failed: {e}", exc_info=True)
             return False
     
+    logger.info("Token refresh not needed")
     return True
 
 @app.get("/api/token/status")
@@ -174,24 +175,44 @@ async def test_endpoint():
 async def receive_data(data: IdeaData):
     return {
         "receivedIdea": data.idea,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(UTC).isoformat() + "Z"
     }
 
 @app.get("/api/tiktok/trending")
 async def get_trending_videos():
     """Get trending TikTok videos with automatic token management"""
+    logger.info("Received request for trending TikTok videos")
     try:
         # Validate token before making request
+        logger.info("Validating and refreshing token if needed...")
         await validate_and_refresh_token()
         
+        logger.info("Fetching trending videos from TikTokApi...")
         videos_data = await trending_videos_with_auto_token()
+        logger.info(f"Fetched {len(videos_data)} trending videos successfully")
+        
+        try:
+            # Clean up videos_data before returning
+            recommendations = [
+                {
+                    "title": video.get("music", {}).get("title") or video.get("desc", "No Title"),
+                    "artist": video.get("music", {}).get("authorName", "Unknown Artist"),
+                    "genre": video.get("music", {}).get("genre", "Unknown Genre"),
+                    "link": f"https://www.tiktok.com/@{video.get('author', {}).get('uniqueId', '')}/video/{video.get('id', '')}"
+                }
+                for video in videos_data
+            ]
+        except Exception as e:
+            logger.error(f"Error processing recommendations: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Error processing recommendations: {str(e)}")
         return {
-            "videos": videos_data, 
-            "count": len(videos_data),
+            "recommendations": recommendations,
+            "count": len(recommendations),
             "token_status": "auto-managed",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(UTC).isoformat()
         }
     except Exception as e:
+        logger.error(f"Error fetching trending videos: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error fetching trending videos: {str(e)}")
 
 @app.get("/api/recommendations")

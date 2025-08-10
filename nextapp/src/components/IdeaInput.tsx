@@ -25,18 +25,17 @@ const IdeaInput: React.FC<IdeaInputProps> = ({ onRecommendationsReceived }) => {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/data', {
-        method: 'POST',
+      const response = await fetch('http://localhost:8000/api/tiktok/trending', {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idea: idea })
+        }      
       });
       
       const data = await response.json();
       onRecommendationsReceived(data);
     } catch (err) {
-      setError("Failed to fetch recommendations");
+      setError("Failed to fetch recommendations: "+ (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setIsLoading(false);
     }
