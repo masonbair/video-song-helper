@@ -4,9 +4,10 @@ import React from "react";
 
 interface IdeaInputProps {
   onRecommendationsReceived: (recommendations: any) => void;
+  onHashtagSongsReceived?: (songsData: any) => void; // optional
 }
 
-const IdeaInput: React.FC<IdeaInputProps> = ({ onRecommendationsReceived }) => {
+const IdeaInput: React.FC<IdeaInputProps> = ({ onRecommendationsReceived, onHashtagSongsReceived }) => {
   const [idea, setIdea] = React.useState<string>("");
   const [error, setError] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -14,6 +15,32 @@ const IdeaInput: React.FC<IdeaInputProps> = ({ onRecommendationsReceived }) => {
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setIdea(event.target.value);
     setError("");
+  };
+
+  const fetchTrendingRecommendations = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/tiktok/trending', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }      
+      });
+      return await response.json();
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const fetchSongsByHashtag = async (hashtag: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/songs/by-hashtag`);
+      const data = await response.json();
+      if (onHashtagSongsReceived) {
+        onHashtagSongsReceived(data);
+      }
+    } catch (err) {
+      setError("Failed to fetch hashtag songs: " + (err instanceof Error ? err.message : "Unknown error"));
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -25,14 +52,8 @@ const IdeaInput: React.FC<IdeaInputProps> = ({ onRecommendationsReceived }) => {
 
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/tiktok/trending', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }      
-      });
-      
-      const data = await response.json();
+      // The API call is called here, depending on what I need to have testing or running
+      const data = await fetchSongsByHashtag("travel");
       onRecommendationsReceived(data);
     } catch (err) {
       setError("Failed to fetch recommendations: "+ (err instanceof Error ? err.message : "Unknown error"));
@@ -42,6 +63,8 @@ const IdeaInput: React.FC<IdeaInputProps> = ({ onRecommendationsReceived }) => {
     
     setIdea(""); // Clear input after submission
   };
+
+  
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-2xl mx-auto p-4">

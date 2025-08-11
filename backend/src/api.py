@@ -1,13 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from dotenv import load_dotenv
-from datetime import datetime, timedelta, UTC
-from TikTokApi import TikTokApi
-import asyncio
-import os
+from datetime import datetime, UTC, timedelta
 import logging
-from typing import Optional
+import os
+
+from src.models import Recommendation, RecommendationResponse, IdeaData, TokenStatus
+from src.tiktok_service import trending_videos_with_auto_token, get_songs_by_hashtag
+from src.token_manager import validate_and_refresh_token
 
 load_dotenv()
 
@@ -30,114 +30,6 @@ app.add_middleware(
 ms_token = os.environ.get("ms_token", None)
 last_token_refresh = None
 token_refresh_interval = timedelta(hours=6)  # Refresh every 6 hours
-
-# Pydantic models
-class Recommendation(BaseModel):
-    title: str
-    artist: str
-    genre: str
-    link: str
-
-class RecommendationResponse(BaseModel):
-    recommendation: Recommendation
-
-class IdeaData(BaseModel):
-    idea: str
-
-class TokenStatus(BaseModel):
-    has_manual_token: bool
-    auto_generation_enabled: bool
-    last_refresh: Optional[str] = None
-    next_refresh: Optional[str] = None
-
-# Enhanced TikTok function with automatic token management
-async def trending_videos_with_auto_token():
-    """
-    Fetch trending videos with automatic token management
-    Falls back to auto-generation if manual token fails
-    """
-    global last_token_refresh
-
-    
-
-    try:
-        # First try with manual token if available
-        if ms_token:
-            logger.info("Attempting with manual ms_token ")
-            async with TikTokApi() as api:
-                await api.create_sessions(ms_tokens=[ms_token], num_sessions=1, sleep_after=3, browser=os.getenv("TIKTOK_BROWSER", "webkit"))
-                videos_data = []
-                async for video in api.trending.videos(count=30):
-                    logger.info(video)
-                    videos_data.append(video.as_dict)
-                
-                last_token_refresh = datetime.now()
-                logger.info(f"Successfully fetched {len(videos_data)} videos with manual token")
-                return videos_data
-                
-    except Exception as e:
-        logger.warning(f"Manual token failed: {e}. Trying auto-generation...")
-    
-    # Fallback to automatic token generation
-    try:
-        logger.info("Attempting automatic token generation")
-        async with TikTokApi() as api:
-            await api.create_sessions(ms_tokens=[ms_token], num_sessions=1, sleep_after=3, browser=os.getenv("TIKTOK_BROWSER", "webkit"))
-            logger.info("Created session with auto-generated token")  
-            videos_data = []
-            async for video in api.trending.videos(count=30):
-                logger.info(video)
-                videos_data.append(video.as_dict)
-                            
-            
-            last_token_refresh = datetime.now()
-            logger.info(f"Successfully fetched {len(videos_data)} videos with auto-generated token")
-            return videos_data
-            
-    except Exception as e:
-        logger.error(f"Both manual and auto token generation failed: {e}")
-        raise
-
-# Token validation function
-async def validate_and_refresh_token():
-    """
-    Validate current token and refresh if needed
-    """
-    global last_token_refresh
-    
-    now = datetime.now()
-    logger.info("Checking if token refresh is needed...")
-    
-    # Check if we need to refresh based on time
-    if (last_token_refresh is None or 
-        (now - last_token_refresh) > token_refresh_interval):
-        
-        logger.info("Token refresh needed, testing connection...")
-        try:
-            # Test with a small request
-            async with TikTokApi() as api:
-                if ms_token:
-                    logger.info("Creating session with manual ms_token")
-                    await api.create_sessions(ms_tokens=[ms_token], num_sessions=1, sleep_after=3, browser=os.getenv("TIKTOK_BROWSER", "webkit"))
-                else:
-                    logger.info("Creating session with auto-generated token")
-                    await api.create_sessions(ms_tokens=[ms_token], num_sessions=1, sleep_after=3, browser=os.getenv("TIKTOK_BROWSER", "webkit"))
-                
-                # Try to fetch just 1 video to test
-                async for video in api.trending.videos(count=1):
-                    logger.info("Token test fetch successful")
-                    break
-                
-                last_token_refresh = now
-                logger.info("Token validation successful")
-                return True
-                
-        except Exception as e:
-            logger.warning(f"Token validation failed: {e}", exc_info=True)
-            return False
-    
-    logger.info("Token refresh not needed")
-    return True
 
 @app.get("/api/token/status")
 async def get_token_status():
@@ -232,6 +124,26 @@ async def add_recommendation(recommendation: Recommendation):
         return {"recommendation": recommendation}
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error adding recommendation")
+
+@app.get("/api/songs/by-hashtag")
+async def songs_by_hashtag():
+    """
+    Get unique songs used in TikTok videos for a given hashtag/keyword.
+    """
+    keyword: str = "Travel"
+    count: int = 30
+    logger.info(f"Attempting to fetch songs for hashtag: {keyword} with count: {count}")
+    try:
+        songs = await get_songs_by_hashtag(keyword, count)
+        return {
+            "keyword": keyword,
+            "count": len(songs),
+            "songs": songs,
+            "timestamp": datetime.now(UTC).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error fetching songs by hashtag: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error fetching songs by hashtag: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

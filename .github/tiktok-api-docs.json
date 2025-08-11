@@ -1,0 +1,538 @@
+{
+  "package": "TikTokApi.api",
+  "description": "This package wraps each entity from TikTok into a class with high-level methods to interact with the TikTok object.",
+  "modules": {
+    "comment": {
+      "class": "Comment",
+      "description": "A TikTok Comment.",
+      "constructor_params": [
+        {
+          "name": "data",
+          "type": "dict | None",
+          "default": "None"
+        }
+      ],
+      "example_usage": "for comment in video.comments:\n    print(comment.text)\n    print(comment.as_dict)",
+      "properties": {
+        "as_dict": {
+          "type": "dict",
+          "description": "The raw data associated with this comment"
+        },
+        "author": {
+          "type": "ClassVar[User]",
+          "description": "The author of the comment"
+        },
+        "id": {
+          "type": "str",
+          "description": "The id of the comment"
+        },
+        "likes_count": {
+          "type": "int",
+          "description": "The amount of likes of the comment"
+        },
+        "parent": {
+          "type": "ClassVar[TikTokApi]",
+          "description": "Parent TikTokApi instance"
+        },
+        "text": {
+          "type": "str",
+          "description": "The contents of the comment"
+        }
+      },
+      "methods": {
+        "replies": {
+          "async": true,
+          "return_type": "AsyncIterator[Comment]",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "default": 20
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Returns replies to the comment"
+        }
+      }
+    },
+    "user": {
+      "class": "User",
+      "description": "A TikTok User.",
+      "constructor_params": [
+        {
+          "name": "username",
+          "type": "str | None",
+          "default": "None"
+        },
+        {
+          "name": "user_id",
+          "type": "str | None",
+          "default": "None"
+        },
+        {
+          "name": "sec_uid",
+          "type": "str | None",
+          "default": "None"
+        },
+        {
+          "name": "data",
+          "type": "dict | None",
+          "default": "None"
+        }
+      ],
+      "example_usage": "user = api.user(username='therock')",
+      "properties": {
+        "as_dict": {
+          "type": "dict",
+          "description": "The raw data associated with this user"
+        },
+        "parent": {
+          "type": "ClassVar[TikTokApi]",
+          "description": "Parent TikTokApi instance"
+        },
+        "sec_uid": {
+          "type": "str",
+          "description": "The sec UID of the user"
+        },
+        "user_id": {
+          "type": "str",
+          "description": "The ID of the user"
+        },
+        "username": {
+          "type": "str",
+          "description": "The username of the user"
+        }
+      },
+      "methods": {
+        "info": {
+          "async": true,
+          "return_type": "dict",
+          "parameters": [],
+          "description": "Returns a dictionary of information associated with this User",
+          "raises": ["InvalidResponseException"],
+          "example_usage": "user_data = await api.user(username='therock').info()"
+        },
+        "liked": {
+          "async": true,
+          "return_type": "AsyncIterator[Video]",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "default": 30
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Returns a user's liked posts if public",
+          "raises": ["InvalidResponseException"],
+          "example_usage": "async for like in api.user(username=\"davidteathercodes\").liked():\n    # do something"
+        },
+        "playlists": {
+          "async": true,
+          "return_type": "AsyncIterator[Playlist]",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "default": 20
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Returns a user's playlists",
+          "raises": ["InvalidResponseException"],
+          "example_usage": "async for playlist in await api.user(username='therock').playlists():\n    # do something"
+        },
+        "videos": {
+          "async": true,
+          "return_type": "AsyncIterator[Video]",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "default": 30
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Returns a user's videos",
+          "raises": ["InvalidResponseException"],
+          "example_usage": "async for video in api.user(username=\"davidteathercodes\").videos():\n    # do something"
+        }
+      }
+    },
+    "trending": {
+      "class": "Trending",
+      "description": "Contains static methods related to trending objects on TikTok.",
+      "properties": {
+        "parent": {
+          "type": "TikTokApi",
+          "description": "Parent TikTokApi instance"
+        }
+      },
+      "methods": {
+        "videos": {
+          "static": true,
+          "async": false,
+          "return_type": "AsyncIterator[Video]",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "default": 30
+            }
+          ],
+          "description": "Returns Videos that are trending on TikTok",
+          "raises": ["InvalidResponseException"],
+          "example_usage": "async for video in api.trending.videos():\n    # do something"
+        }
+      }
+    },
+    "search": {
+      "class": "Search",
+      "description": "Contains static methods about searching TikTok for a phrase.",
+      "properties": {
+        "parent": {
+          "type": "TikTokApi",
+          "description": "Parent TikTokApi instance"
+        }
+      },
+      "methods": {
+        "search_type": {
+          "static": true,
+          "async": false,
+          "return_type": "AsyncIterator",
+          "parameters": [
+            {
+              "name": "search_term",
+              "type": "str",
+              "description": "The phrase you want to search for"
+            },
+            {
+              "name": "obj_type",
+              "type": "str",
+              "description": "The type of object you want to search for (user)"
+            },
+            {
+              "name": "count",
+              "type": "int",
+              "default": 10
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Searches for a specific type of object. But you shouldn't use this directly, use the other methods.",
+          "notes": [
+            "Your ms_token needs to have done a search before for this to work",
+            "Currently only supports searching for users, other endpoints require auth"
+          ],
+          "raises": ["InvalidResponseException"],
+          "example_usage": "async for user in api.search.search_type('david teather', 'user'):\n    # do something"
+        },
+        "users": {
+          "static": true,
+          "async": false,
+          "return_type": "AsyncIterator[User]",
+          "parameters": [
+            {
+              "name": "search_term",
+              "type": "str",
+              "description": "The phrase you want to search for"
+            },
+            {
+              "name": "count",
+              "type": "int",
+              "default": 10
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Searches for users",
+          "notes": ["Your ms_token needs to have done a search before for this to work"],
+          "raises": ["InvalidResponseException"],
+          "example_usage": "async for user in api.search.users('david teather'):\n    # do something"
+        }
+      }
+    },
+    "hashtag": {
+      "class": "Hashtag",
+      "description": "A TikTok Hashtag/Challenge.",
+      "constructor_params": [
+        {
+          "name": "name",
+          "type": "str | None",
+          "default": "None"
+        },
+        {
+          "name": "id",
+          "type": "str | None",
+          "default": "None"
+        },
+        {
+          "name": "data",
+          "type": "dict | None",
+          "default": "None"
+        }
+      ],
+      "example_usage": "hashtag = api.hashtag(name='funny')\nasync for video in hashtag.videos():\n    print(video.id)",
+      "properties": {
+        "as_dict": {
+          "type": "dict",
+          "description": "The raw data associated with this hashtag"
+        },
+        "id": {
+          "type": "str | None",
+          "description": "The ID of the hashtag"
+        },
+        "name": {
+          "type": "str | None",
+          "description": "The name of the hashtag (omiting the #)"
+        },
+        "parent": {
+          "type": "ClassVar[TikTokApi]",
+          "description": "Parent TikTokApi instance"
+        }
+      },
+      "methods": {
+        "info": {
+          "async": true,
+          "return_type": "dict",
+          "parameters": [],
+          "description": "Returns all information sent by TikTok related to this hashtag",
+          "example_usage": "hashtag = api.hashtag(name='funny')\nhashtag_data = await hashtag.info()"
+        },
+        "videos": {
+          "async": true,
+          "return_type": "AsyncIterator[Video]",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "default": 30
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Returns TikTok videos that have this hashtag in the caption",
+          "raises": ["InvalidResponseException"],
+          "example_usage": "async for video in api.hashtag(name='funny').videos():\n    # do something"
+        }
+      }
+    },
+    "sound": {
+      "class": "Sound",
+      "description": "A TikTok Sound/Music/Song.",
+      "constructor_params": [
+        {
+          "name": "id",
+          "type": "str | None",
+          "default": "None"
+        },
+        {
+          "name": "data",
+          "type": "str | None",
+          "default": "None"
+        }
+      ],
+      "example_usage": "song = api.song(id='7016547803243022337')",
+      "properties": {
+        "author": {
+          "type": "User | None",
+          "description": "The author of the song (if it exists)"
+        },
+        "duration": {
+          "type": "int | None",
+          "description": "The duration of the song in seconds"
+        },
+        "id": {
+          "type": "str",
+          "description": "TikTok's ID for the sound"
+        },
+        "original": {
+          "type": "bool | None",
+          "description": "Whether the song is original or not"
+        },
+        "parent": {
+          "type": "ClassVar[TikTokApi]",
+          "description": "Parent TikTokApi instance"
+        },
+        "title": {
+          "type": "str | None",
+          "description": "The title of the song"
+        }
+      },
+      "methods": {
+        "info": {
+          "async": true,
+          "return_type": "dict",
+          "parameters": [],
+          "description": "Returns all information sent by TikTok related to this sound",
+          "raises": ["InvalidResponseException"],
+          "example_usage": "sound_info = await api.sound(id='7016547803243022337').info()"
+        },
+        "videos": {
+          "async": true,
+          "return_type": "AsyncIterator[Video]",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "default": 30
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Returns Video objects of videos created with this sound",
+          "raises": ["InvalidResponseException"],
+          "example_usage": "async for video in api.sound(id='7016547803243022337').videos():\n    # do something"
+        }
+      }
+    },
+    "video": {
+      "class": "Video",
+      "description": "A TikTok Video class",
+      "constructor_params": [
+        {
+          "name": "id",
+          "type": "str | None",
+          "default": "None"
+        },
+        {
+          "name": "url",
+          "type": "str | None",
+          "default": "None"
+        },
+        {
+          "name": "data",
+          "type": "dict | None",
+          "default": "None"
+        }
+      ],
+      "example_usage": "video = api.video(id='7041997751718137094')",
+      "properties": {
+        "as_dict": {
+          "type": "dict",
+          "description": "The raw data associated with this Video"
+        },
+        "author": {
+          "type": "User | None",
+          "description": "The User who created the Video"
+        },
+        "create_time": {
+          "type": "datetime | None",
+          "description": "The creation time of the Video"
+        },
+        "hashtags": {
+          "type": "list[Hashtag] | None",
+          "description": "A List of Hashtags on the Video"
+        },
+        "id": {
+          "type": "str | None",
+          "description": "TikTok's ID of the Video"
+        },
+        "parent": {
+          "type": "ClassVar[TikTokApi]",
+          "description": "Parent TikTokApi instance"
+        },
+        "sound": {
+          "type": "Sound | None",
+          "description": "The Sound that is associated with the Video"
+        },
+        "stats": {
+          "type": "dict | None",
+          "description": "TikTok's stats of the Video"
+        },
+        "url": {
+          "type": "str | None",
+          "description": "The URL of the Video"
+        }
+      },
+      "methods": {
+        "bytes": {
+          "async": true,
+          "return_type": "bytes | AsyncIterator[bytes]",
+          "parameters": [
+            {
+              "name": "stream",
+              "type": "bool",
+              "default": false
+            }
+          ],
+          "description": "Returns the bytes of a TikTok Video",
+          "example_usage": "video_bytes = await api.video(id='7041997751718137094').bytes()\n\n# Saving The Video\nwith open('saved_video.mp4', 'wb') as output:\n    output.write(video_bytes)\n\n# Streaming (if stream=True)\nasync for chunk in api.video(id='7041997751718137094').bytes(stream=True):\n    # Process or upload chunk"
+        },
+        "comments": {
+          "async": true,
+          "return_type": "AsyncIterator[Comment]",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "default": 20
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Returns the comments of a TikTok Video",
+          "example_usage": "async for comment in api.video(id='7041997751718137094').comments():\n    # do something"
+        },
+        "info": {
+          "async": true,
+          "return_type": "dict",
+          "parameters": [],
+          "description": "Returns a dictionary of all data associated with a TikTok Video",
+          "notes": ["This is slow since it requires an HTTP request, avoid using this if possible"],
+          "raises": ["InvalidResponseException"],
+          "example_usage": "url = \"https://www.tiktok.com/@davidteathercodes/video/7106686413101468970\"\nvideo_info = await api.video(url=url).info()"
+        },
+        "related_videos": {
+          "async": true,
+          "return_type": "AsyncIterator[Video]",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "default": 30
+            },
+            {
+              "name": "cursor",
+              "type": "int",
+              "default": 0
+            }
+          ],
+          "description": "Returns related videos of a TikTok Video",
+          "example_usage": "async for related_videos in api.video(id='7041997751718137094').related_videos():\n    # do something"
+        }
+      }
+    }
+  }
+}

@@ -18,11 +18,11 @@ RUN /app/venv/bin/pip install -r requirements.txt
 RUN python -m playwright install-deps webkit
 RUN python -m playwright install webkit
 
-ENV ms_token="chCOfEp6uVitgiLLrA9_nVDDNay_cD51gI6fkg1LvFlPmQghTjgUOWrDZZZ1ev3odzdwFIqT6RHcciqTc-ucsB9_5f7dgjQZPIdtSktEZFTHw5kTJayE0xtVKJ_gb8w8_obJUGUGYDQ="
+ENV ms_token="IVyWCKuAKYABY6WLR64Xi-worKGJRvJB2KMtMw-qAdEuXZgb7YOV6rLkaipLAJKA1pSURMebyYbc-lsVmz6uoT7ot2qY7nC8EOdfbzVc96lsETn8lnoBVu0ah2dYXa9-V7ov3MgABGF2kdyHcZW-"
 # USER pwuser
 
 COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]

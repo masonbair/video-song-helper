@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from fastapi import status
 from unittest.mock import patch, AsyncMock
-from src.main import app
+from backend.src.api import app
 
 @pytest.mark.asyncio
 async def test_force_token_refresh_success():

@@ -20,8 +20,8 @@ This is my overall goal for the app. But at the moment, I want to focus a piece 
 of how I want to break down the app:
 1. **User Input**: Create a simple form where users can enter their video idea.
 2. **TikTok API Integration**: Set up the integration with the TikTok API to fetch trending songs.
-3. **AI Analysis**: Implement the AI model to analyze the video idea and extract characteristics
-4. **Song Matching**: Develop the logic to match the AI analysis with TikTok songs.
+3. **Song Matching**: Develop the logic to match the AI analysis with TikTok songs.
+4. **AI Analysis**: Implement the AI model to analyze the video idea and extract characteristics
 5. **User Interface**: Build a user-friendly interface to display the results and allow song selection.
 6. **Deployment**: Prepare the application for deployment on a cloud platform.
 
