@@ -17,12 +17,20 @@ app = FastAPI(title="Song Recommendation API")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configure CORS
+# Configure CORS - specify each origin explicitly for better security
+origins = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://nextjs:3000",  # Docker service name
+]
+
+# Configure CORS middleware with explicit origins and better security
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=origins,
+    allow_credentials=False,  # Set to False to avoid preflight issues
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -126,15 +134,26 @@ async def add_recommendation(recommendation: Recommendation):
         raise HTTPException(status_code=500, detail="Error adding recommendation")
 
 @app.get("/api/songs/by-hashtag")
-async def songs_by_hashtag():
+async def songs_by_hashtag(keyword: str = Query("Travel"), count: int = Query(30)):
     """
     Get unique songs used in TikTok videos for a given hashtag/keyword.
     """
-    keyword: str = "Travel"
-    count: int = 30
     logger.info(f"Attempting to fetch songs for hashtag: {keyword} with count: {count}")
     try:
-        songs = await get_songs_by_hashtag(keyword, count)
+        # Limit to max 5 videos to avoid rate limiting issues
+        max_videos = 5
+        songs = await get_songs_by_hashtag(keyword, count, max_videos)
+        
+        if not songs:
+            logger.warning(f"No songs found for hashtag: {keyword}")
+            return {
+                "keyword": keyword,
+                "count": 0,
+                "songs": [],
+                "message": "No songs found for this hashtag",
+                "timestamp": datetime.now(UTC).isoformat()
+            }
+        
         return {
             "keyword": keyword,
             "count": len(songs),

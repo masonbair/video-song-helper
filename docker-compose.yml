@@ -16,6 +16,9 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # For browser-side API calls
+      - NEXT_PUBLIC_API_URL=http://localhost:8000 
+      # For server-side API calls
       - CUSTOM_API_URL=http://backend:8000
     depends_on:
       - backend
