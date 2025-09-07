@@ -51,16 +51,16 @@ const SongCard: React.FC<{ song: HashtagSong, idx: number }> = ({ song, idx }) =
 
   return (
     <li 
-      className="relative rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all h-40 group aspect-square"
+      className="relative rounded-lg overflow-hidden border-2 border-gray-300 shadow-md hover:shadow-lg hover:border-gray-400 transition-all group w-56 h-56 flex-shrink-0"
     >
       {/* Cover Image - Fixed size with consistent aspect ratio */}
       <div 
         className="absolute inset-0 bg-cover bg-center h-full w-full" 
         style={{ 
           backgroundImage: `url(${song.cover_url || defaultCover})`,
-          filter: 'brightness(0.7)',
+          filter: 'brightness(0.8)',
           backgroundSize: 'cover',
-          aspectRatio: '1 / 1'
+          backgroundPosition: 'center',
         }}
         onError={(e) => {
           // Fallback to default cover if image fails to load
@@ -135,7 +135,7 @@ const SongCard: React.FC<{ song: HashtagSong, idx: number }> = ({ song, idx }) =
 
 const HashtagSongList: React.FC<HashtagSongListProps> = ({ songs, keyword, count, timestamp }) => {
   return (
-    <div className="hashtag-song-list mt-8 w-full max-w-6xl">
+    <div className="hashtag-song-list mt-8 w-full max-w-6xl mx-auto px-4 overflow-hidden">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Songs for #{keyword}</h2>
         <div className="text-sm text-gray-500">
@@ -145,13 +145,22 @@ const HashtagSongList: React.FC<HashtagSongListProps> = ({ songs, keyword, count
       </div>
       
       {songs.length > 0 ? (
-        <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 auto-rows-fr"
-            key={`songlist-${keyword}-${timestamp}`}
-        >
-          {songs.map((song, idx) => (
-            <SongCard key={`song-${idx}-${song.id}-${timestamp}`} song={song} idx={idx} />
-          ))}
-        </ul>
+        <div className="relative">
+          {/* Scroll hint */}
+          <div className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-2 rounded-l-lg z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+          <ul className="flex flex-row flex-nowrap justify-start overflow-x-auto gap-6 pb-4 pr-8 mb-4"
+              key={`songlist-${keyword}-${timestamp}`}
+              style={{ scrollbarWidth: 'thin' }}
+          >
+            {songs.map((song, idx) => (
+              <SongCard key={`song-${song.id}-${timestamp}`} song={song} idx={idx} />
+            ))}
+          </ul>
+        </div>
       ) : (
         <p className="text-gray-500">No songs found for this hashtag.</p>
       )}

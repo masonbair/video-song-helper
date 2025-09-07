@@ -1,5 +1,5 @@
-# Use official Node.js image as base
-FROM node:20-alpine AS builder
+# Use Debian-based Node.js image instead of Alpine to avoid lightningcss MUSL issues
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY . .
 RUN npm run build
 
 # Production image
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
 

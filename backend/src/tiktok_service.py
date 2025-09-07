@@ -150,29 +150,41 @@ async def get_songs_by_hashtag(keyword: str, count: int = 10, max_videos: int = 
         
     # If not in cache, fetch fresh data
     try:
+        # Get unique video URLs for the hashtag
         video_urls = await fetch_hashtag_video_urls(keyword)
         if not video_urls:
             logger.warning(f"No video URLs found for hashtag: {keyword}")
             return []
             
-        # Limit to the first max_videos (default 5) to prevent rate limiting issues
+        # Limit to the first max_videos to prevent rate limiting issues
         limited_urls = video_urls[:max_videos]
-        logger.info(f"Processing {len(limited_urls)} out of {len(video_urls)} available videos")
+        logger.info(f"Processing {len(limited_urls)} out of {len(video_urls)} available unique videos")
+        
+        # Fetch song info for the videos
         song_infos = await get_song_info_from_videos(limited_urls)
         
+        # Further ensure we have no duplicate songs by ID
+        unique_songs = {}
+        for song in song_infos:
+            if song['id'] and song['id'] not in unique_songs:
+                unique_songs[song['id']] = song
+                
+        # Convert back to list
+        unique_song_list = list(unique_songs.values())
+        
         # Store in cache for future requests
-        if song_infos and len(song_infos) > 0:
-            logger.info(f"Found song: {song_infos[0]['title']} by {song_infos[0]['author']}")
-            cache.set(cache_key, song_infos, CACHE_TTL)
-            return song_infos
+        if unique_song_list:
+            logger.info(f"Found {len(unique_song_list)} unique songs for hashtag: {keyword}")
+            if unique_song_list:
+                logger.info(f"Example: '{unique_song_list[0]['title']}' by {unique_song_list[0]['author']}")
+            cache.set(cache_key, unique_song_list, CACHE_TTL)
+            return unique_song_list
         else:
             logger.warning(f"No song information found for videos with hashtag: {keyword}")
             return []
     except Exception as e:
         logger.error(f"Error in get_songs_by_hashtag: {str(e)}")
         return []
-    else:
-        logger.warning(f"No songs found for hashtag: {keyword}")
         
-    return song_infos
+    return []
 

@@ -1,3 +1,4 @@
+/** @type {import('next').NextConfig} */
 module.exports = {
   reactStrictMode: true,
   images: {
@@ -10,4 +11,8 @@ module.exports = {
     // Will be available on both server and client
     NEXT_PUBLIC_API_URL: process.env.CUSTOM_API_URL || 'http://localhost:8000',
   },
+  // Disable source maps in production for better performance
+  productionBrowserSourceMaps: false,
+  // Optimize CSS usage
+  swcMinify: true,
 };
